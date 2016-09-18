@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.basic.dao.sys.rolePermission.ISysRolePermissionMapper">
+	<resultMap id="sysUserMap" type="sysUser" >
+		<id column="ID" property="id" jdbcType="DECIMAL"/>
+		<result column="ROLE_ID" property="role.id" jdbcType="DECIMAL"/>
+		<result column="PERMISSION_ID" property="permission.id" jdbcType="DECIMAL"/>
+		<result column="STATUS" property="status" jdbcType="VARCHAR"/>
+		
+		<result column="CREATOR_ID" property="info.creatorId" jdbcType="DECIMAL"/>
+		<result column="CREATOR" property="info.creator" jdbcType="VARCHAR"/>
+		<result column="CREATED_TIME" property="info.createdTime" jdbcType="TIMESTAMP"/>
+		<result column="LAST_OPERATOR_ID" property="info.lastOperatorId" jdbcType="DECIMAL"/>
+		<result column="LAST_OPERATOR" property="info.lastOperator" jdbcType="VARCHAR"/>
+		<result column="LAST_OPERATED_TIME" property="info.lastOperatedTime" jdbcType="TIMESTAMP"/>
+	</resultMap>
+	
+	<sql id="base_column">
+		ID,ROLE_ID,PERMISSION_ID,STATUS,CREATOR,CREATED_TIME,LAST_OPERATOR,LAST_OPERATED_TIME
+	</sql>
+	
+</mapper>

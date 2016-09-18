@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.basic.dao.sys.user.ISysUserMapper">
+	<resultMap id="sysUserMap" type="sysUser" >
+		<id column="ID" property="id" jdbcType="DECIMAL"/>
+		<result column="USERNAME" property="username" jdbcType="VARCHAR"/>
+		<result column="PASSWORD" property="password" jdbcType="VARCHAR"/>
+		<result column="STATUS" property="status" jdbcType="VARCHAR"/>
+		
+		<result column="CREATOR_ID" property="info.creatorId" jdbcType="DECIMAL"/>
+		<result column="CREATOR" property="info.creator" jdbcType="VARCHAR"/>
+		<result column="CREATED_TIME" property="info.createdTime" jdbcType="TIMESTAMP"/>
+		<result column="LAST_OPERATOR_ID" property="info.lastOperatorId" jdbcType="DECIMAL"/>
+		<result column="LAST_OPERATOR" property="info.lastOperator" jdbcType="VARCHAR"/>
+		<result column="LAST_OPERATED_TIME" property="info.lastOperatedTime" jdbcType="TIMESTAMP"/>
+	</resultMap>
+	
+	<sql id="base_column">
+		s1.ID,s1.USERNAME,s1.PASSWORD,
+		case s1.STATUS
+		when 'ENABLED' then '生效'
+		when 'DISABLED' then '失效'
+		else '-' end as STATUS,
+		s3.NAME ROLENAME, s1.CREATOR,s1.CREATED_TIME,s1.LAST_OPERATOR,s1.LAST_OPERATED_TIME
+	</sql>
+	
+	<sql id="sql_table">
+		FROM SYS_USER s1
+		LEFT JOIN SYS_USER_ROLE s2 ON s2.USER_ID = s1.ID
+		LEFT JOIN SYS_ROLE s3 ON s2.ROLE_ID = s3.ID
+	</sql>
+	
+	<sql id="sql_where">
+		WHERE 1=1
+		<if test="id !=null and id !=''">
+			AND s1.ID = #{id}
+		</if>
+		<if test="username !=null and username !=''">
+			AND s1.USERNAME LIKE CONCAT(CONCAT('%',#{username}),'%')
+		</if>
+		<if test="rolename !=null and rolename !=''">
+			AND s3.NAME = #{rolename}
+		</if>
+	</sql>
+	
+	<sql id="orderBy">
+		<choose>
+			<when test="sort !=null">
+				ORDER BY ${sort} ${order}
+			</when>
+			<otherwise>
+				ORDER BY s1.ID DESC
+			</otherwise>
+		</choose>
+	</sql>
+	
+	
+	<!-- 分页查询 begin -->
+	<select id="page" parameterType="Map" resultType="Map">
+		SELECT
+		<include refid="base_column"/>
+		<include refid="sql_table"/>
+		<include refid="sql_where"/>
+		<include refid="orderBy"/>
+		LIMIT #{offset} , #{rows}
+	</select>
+	
+	<select id="total" parameterType="Map" resultType="Long">
+		SELECT COUNT(1) 
+		<include refid="sql_table"/>
+		<include refid="sql_where"/>
+	</select>
+	<!-- 分页查询 end -->
+	
+	<!-- 根据username查询 begin -->
+	<select id="loadByUsername" parameterType="String" resultMap="sysUserMap">
+		SELECT ID,USERNAME,PASSWORD,STATUS
+		FROM SYS_USER
+		WHERE USERNAME = #{username}
+			AND STATUS = 'ENABLED'
+	</select>
+	<!-- 根据username查询 end -->
+	
+	<!-- 根据id查询信息 begin -->
+	<select id="load" parameterType="Long" resultMap="sysUserMap">
+		SELECT ID,USERNAME
+		FROM SYS_USER
+		WHERE ID = #{id}
+	</select>
+	<!-- 根据id查询信息 end -->
+	
+	<!-- 新增用户 begin -->
+	<insert id="insert" parameterType="sysUser" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO SYS_USER(USERNAME,PASSWORD,STATUS,CREATOR_ID,CREATOR,CREATED_TIME)VALUES(
+			#{username},#{password},'ENABLED',#{info.creatorId},#{info.creator},#{info.createdTime}
+		)
+	</insert>
+	<!-- 新增用户 end -->
+	
+	<!-- 按id删除 begin -->
+	<delete id="remove" parameterType="java.util.List">
+		DELETE FROM SYS_USER
+		WHERE ID IN
+		<foreach collection="idList" item="item" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		
+	</delete>
+	<!-- 按id删除 end -->
+	
+	<!-- 导出成excel begin -->
+	<select id="exportPage" parameterType="Map" resultType="Map">
+		SELECT
+		<include refid="base_column"/>
+		<include refid="sql_table"/>
+		<include refid="sql_where"/>
+	</select>
+	<!-- 导出成excel end -->
+	
+</mapper>

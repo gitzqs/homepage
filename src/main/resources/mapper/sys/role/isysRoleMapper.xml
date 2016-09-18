@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.basic.dao.sys.role.ISysRoleMapper">
+	<resultMap id="sysRoleMap" type="sysRole" >
+		<id column="ID" property="id" jdbcType="DECIMAL"/>
+		<result column="CODE" property="code" jdbcType="VARCHAR"/>
+		<result column="NAME" property="name" jdbcType="VARCHAR"/>
+		<result column="STATUS" property="status" jdbcType="VARCHAR"/>
+		<result column="DESCRIPTION" property="description" jdbcType="VARCHAR"/>
+		
+		<result column="CREATOR_ID" property="info.creatorId"/>
+		<result column="CREATOR" property="info.creator" />
+		<result column="CREATED_TIME" property="info.createdTime"/>
+		<result column="LAST_OPERATOR_ID" property="info.lastOperatorId"/>
+		<result column="LAST_OPERATOR" property="info.lastOperator" />
+		<result column="LAST_OPERATED_TIME" property="info.lastOperatedTime"/>
+	</resultMap>
+	
+	<sql id="base_column">
+		ID,CODE,NAME,
+		case STATUS
+		when 'ENABLED' then '生效'
+		when 'DISABLED' then '失效'
+		else '-' end as STATUS,
+		DESCRIPTION,CREATOR,CREATED_TIME,LAST_OPERATOR,LAST_OPERATED_TIME
+	</sql>
+	
+	<sql id="sql_table">
+		FROM SYS_ROLE
+	</sql>
+	
+	<sql id="sql_where">
+		WHERE 1=1
+		<if test="code !=null and code !=''">
+			AND CODE = #{code}
+		</if>
+		<if test="name !=null and name !=''">
+			AND NAME = #{name}
+		</if>
+		<if test="status !=null and status !=''">
+			AND STATUS = #{status}
+		</if>
+		<if test="id !=null and id !=''">
+			AND ID = #{id}
+		</if>
+	</sql>
+	
+	<sql id="orderBy">
+		<choose>
+			<when test="sort !=null">
+				ORDER BY ${sort} ${order}
+			</when>
+			<otherwise>
+				ORDER BY ID DESC
+			</otherwise>
+		</choose>
+	</sql>
+	
+	
+	<!-- 分页查询 begin -->
+	<select id="page" parameterType="Map" resultType="Map">
+		SELECT
+		<include refid="base_column"/>
+		<include refid="sql_table"/>
+		<include refid="sql_where"/>
+		<include refid="orderBy"/>
+		LIMIT #{offset},#{rows}
+	</select>
+	
+	<select id="total" parameterType="Map" resultType="Long">
+		SELECT COUNT(1) 
+		<include refid="sql_table"/>
+		<include refid="sql_where"/>
+	</select>
+	<!-- 分页查询 end -->
+	
+	<!-- 根据code或name查询 验证是否唯一 begin -->
+	<select id="judgeOnlyByCodeOrName" parameterType="Map" resultType="Integer">
+		SELECT count(1)
+		<include refid="sql_table"/>
+		<include refid="sql_where"/>
+	</select>
+	<!-- 根据code或者name查询 验证是否唯一 end -->
+	
+	<!-- 新增角色 begin -->
+	<insert id="save" parameterType="sysRole">
+		INSERT INTO SYS_ROLE(CODE,NAME,STATUS,DESCRIPTION,CREATOR_ID,CREATOR,CREATED_TIME)VALUES(
+			#{code},#{name},'ENABLED',#{description},#{creatorId},#{creator},#{createdTime}
+		)
+	</insert>
+	<!-- 新增角色 end -->
+	
+	<!-- 根据单一参数(id或者code或者name)进行查询 begin -->
+	<select id="loadByParam" parameterType="Map" resultMap="sysRoleMap">
+		SELECT ID,CODE,NAME,DESCRIPTION
+		<include refid="sql_table"/>
+		<include refid="sql_where"/>
+	</select>
+	<!-- 根据单一参数(id或者code或者name)进行查询 end -->
+	
+	<!-- 根据id更新角色信息 begin -->
+	<update id="update" parameterType="sysRole">
+		UPDATE SYS_ROLE
+		<set>
+			LAST_OPERATOR_ID = #{lastOperatorId},
+			LAST_OPERATOR = #{lastOperator},
+			LAST_OPERATED_TIME = #{lastOperatedTime},
+			DESCRIPTION = #{description}
+			<if test="code !=null and code != ''">
+				,CODE = #{code}
+			</if>
+			<if test="name !=null and name != ''">
+				,NAME = #{name}
+			</if>
+				
+		</set>
+		<where>
+			ID = #{id}
+		</where>
+	</update>
+	<!-- 根据id更新角色信息 end -->
+	
+	<!-- 批量删除 begin -->
+	<delete id="remove" parameterType="java.util.List">
+		DELETE FROM SYS_ROLE
+		WHERE
+		ID IN
+		<foreach collection="idList" index="index" item="item" open="(" separator="," close=")" >
+			#{item}
+		</foreach>
+	</delete>
+	<!-- 批量删除 end -->
+	
+	<!-- 获取全部角色 begin -->
+	<select id="loadAll" resultMap="sysRoleMap">
+		SELECT ID,NAME
+		<include refid="sql_table"/>
+		WHERE STATUS = 'ENABLED'
+	</select>
+	<!-- 获取全部角色 end -->
+	
+</mapper>

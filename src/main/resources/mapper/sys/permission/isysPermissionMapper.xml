@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.basic.dao.sys.permission.ISysPermissionMapper">
+	<resultMap id="sysUserMap" type="sysUser" >
+		<id column="ID" property="id" jdbcType="DECIMAL"/>
+		<result column="CODE" property="code" jdbcType="VARCHAR"/>
+		<result column="NAME" property="name" jdbcType="VARCHAR"/>
+		<result column="PARENT_PERMISSION_ID" property="parentPermissionId" jdbcType="DECIMAL"/>
+		<result column="TYPE" property="type" jdbcType="VARCHAR"/>
+		
+		<result column="URL" property="url" jdbcType="VARCHAR"/>
+		<result column="PRIORITY" property="priority" jdbcType="INTEGER"/>
+		<result column="STATUS" property="status" jdbcType="VARCHAR"/>
+		<result column="ICON" property="icon" jdbcType="VARCHAR"/>
+		
+		<result column="CREATOR_ID" property="info.creatorId" jdbcType="DECIMAL"/>
+		<result column="CREATOR" property="info.creator" jdbcType="VARCHAR"/>
+		<result column="CREATED_TIME" property="info.createdTime" jdbcType="TIMESTAMP"/>
+		<result column="LAST_OPERATOR_ID" property="info.lastOperatorId" jdbcType="DECIMAL"/>
+		<result column="LAST_OPERATOR" property="info.lastOperator" jdbcType="VARCHAR"/>
+		<result column="LAST_OPERATED_TIME" property="info.lastOperatedTime" jdbcType="TIMESTAMP"/>
+	</resultMap>
+	
+	<sql id="base_column">
+		s1.ID,s1.CODE,s1.NAME,s1.PARENT_PERMISSION_ID,
+		case s1.TYPE
+		when 'MENU' then '菜单'
+		when 'BUTTON' then '按钮'
+		else '-' end as TYPE,
+		s1.URL,s1.PRIORITY,
+		case s1.STATUS
+		when 'ENABLED' then '生效'
+		when 'DISABLED' then '失效'
+		else '-' end as STATUS,
+		s1.ICON,s1.CREATOR,s1.CREATED_TIME,s1.LAST_OPERATOR,s1.LAST_OPERATED_TIME,s2.NAME PARENT_PERMISSION_NAME
+	</sql>
+	
+	<sql id="sql_table">
+		FROM SYS_PERMISSION s1
+		LEFT JOIN SYS_PERMISSION s2 on s1.PARENT_PERMISSION_ID = s2.id
+	</sql>
+	
+	<sql id="sql_where">
+		WHERE 1=1
+		<if test="code !=null and code !=''">
+			AND s1.CODE = #{code}
+		</if>
+		AND s1.PARENT_PERMISSION_ID = #{parentId}
+	
+			
+	
+	</sql>
+	
+	<sql id="orderBy">
+		<choose>
+			<when test="sort !=null">
+				ORDER BY ${sort} ${order}
+			</when>
+			<otherwise>
+				ORDER BY s1.PRIORITY
+			</otherwise>
+		</choose>
+	</sql>
+	
+	
+	<!-- 分页查询 begin -->
+	<select id="page" parameterType="Map" resultType="Map">
+		SELECT
+		<include refid="base_column"/>
+		<include refid="sql_table"/>
+		<include refid="sql_where"/>
+		<include refid="orderBy"/>
+		LIMIT #{offset} , #{rows}
+	</select>
+	
+	<select id="total" parameterType="Map" resultType="Long">
+		SELECT COUNT(1) 
+		<include refid="sql_table"/>
+		<include refid="sql_where"/>
+	</select>
+	<!-- 分页查询 end -->
+	
+	<!-- 根据用户id查询用户权限主目录 begin -->
+	<select id="loadMainPermissionByUsername" parameterType="String" resultType="Map">
+		SELECT s1.ID,s1.NAME,s1.ICON
+		FROM SYS_PERMISSION s1
+		LEFT JOIN SYS_ROLE_PERMISSION s2 on s2.PERMISSION_ID = s1.id
+		LEFT JOIN SYS_ROLE s3 on s3.id = s2.ROLE_ID
+		LEFT JOIN SYS_USER_ROLE s4 on s4.ROLE_ID = s3.id
+		LEFT JOIN SYS_USER s5 on s5.id = s4.USER_ID
+		WHERE s5.USERNAME = #{username}
+		AND s1.PARENT_PERMISSION_ID = 0
+		AND s4.STATUS = 'ENABLED'
+		AND s3.STATUS = 'ENABLED'
+		AND s2.STATUS = 'ENABLED'
+		AND s1.STATUS = 'ENABLED'
+		ORDER BY s1.PRIORITY ASC
+	</select>
+	<!-- 根据用户id查询用户权限主目录 end -->
+	
+	<!--  根据PARENT_PERMISSION_ID获取权限子目录 begin -->
+	<select id="loadChildPermission" parameterType="Long" resultType="Map">
+		SELECT ID,NAME,URL
+		FROM SYS_PERMISSION
+		WHERE PARENT_PERMISSION_ID = #{parentId}
+		AND STATUS = 'ENABLED'
+		ORDER BY PRIORITY ASC
+	</select>
+	<!-- 根据PARENT_PERMISSION_ID获取权限子目录 end -->
+	
+</mapper>
